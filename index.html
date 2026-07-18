@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ian Hay — GIS Specialist | Hex Coder</title>
+<meta name="description" content="GIS specialist with extensive experience across mining, energy and government. QGIS plugin developer, PostGIS, MapLibre, Power BI. Perth, Western Australia.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+:root{
+  --ironstone:#14161a;
+  --basalt:#1e2128;
+  --ochre:#c8502a;
+  --gold:#d9a441;
+  --survey:#e8e2d4;
+  --mute:#8b8f99;
+  --hairline:rgba(232,226,212,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Sora',sans-serif;background:var(--ironstone);color:var(--survey);line-height:1.65;font-weight:300}
+::selection{background:var(--ochre);color:var(--survey)}
+
+#map{position:fixed;inset:0;z-index:0}
+#map::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 30%,rgba(20,22,26,.55) 100%)}
+.maplibregl-ctrl-attrib{background:rgba(20,22,26,.7)!important;font-size:10px}
+.maplibregl-ctrl-attrib a{color:var(--mute)!important}
+
+main{position:relative;z-index:1}
+.chapter{min-height:100vh;display:flex;align-items:center;padding:12vh 6vw}
+.chapter.right{justify-content:flex-end}
+.chapter.center{justify-content:center}
+.chapter.tall{min-height:130vh}
+
+.panel{
+  max-width:560px;background:rgba(30,33,40,.92);backdrop-filter:blur(6px);
+  border:1px solid var(--hairline);padding:44px 44px 40px;
+  opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;
+}
+.panel.wide{max-width:880px}
+.panel.bare{background:transparent;border:none;backdrop-filter:none;padding:0}
+.chapter.active .panel{opacity:1;transform:none}
+
+.coord{
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;
+  color:var(--gold);display:flex;align-items:center;gap:10px;margin-bottom:18px;text-transform:uppercase;
+}
+.coord::before{content:"";width:10px;height:10px;border:1.5px solid var(--gold);transform:rotate(45deg);flex:none}
+
+h1,h2{font-family:'Space Grotesk',sans-serif;font-weight:700;line-height:1.05;letter-spacing:.01em;text-transform:uppercase}
+h1{font-size:clamp(2.8rem,6.5vw,4.8rem)}
+h2{font-size:clamp(1.6rem,3.2vw,2.3rem);margin-bottom:16px}
+.sub{color:var(--mute);font-size:1.05rem;margin-top:14px}
+p+p{margin-top:12px}
+strong{font-weight:600;color:var(--survey)}
+a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(217,164,65,.35)}
+a:hover{border-bottom-color:var(--gold)}
+
+#hero .panel{background:transparent;border:none;backdrop-filter:none;max-width:800px}
+.byline{
+  font-family:'Space Grotesk',sans-serif;font-weight:500;text-transform:uppercase;
+  letter-spacing:.28em;font-size:clamp(.8rem,1.6vw,1.05rem);color:var(--ochre);margin-top:14px;
+}
+.hero-tag{
+  display:inline-block;margin-top:26px;font-family:'JetBrains Mono',monospace;font-size:12px;
+  letter-spacing:.1em;color:var(--survey);border:1px solid var(--hairline);padding:8px 14px;background:rgba(20,22,26,.6);
+}
+.scroll-cue{
+  position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--mute);
+  animation:cue 2.2s ease-in-out infinite;
+}
+@keyframes cue{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+
+/* world chapter — map only, small floating label */
+#world{align-items:flex-end;justify-content:center;padding-bottom:8vh}
+#world .coord{margin-bottom:0;background:rgba(20,22,26,.7);padding:10px 16px;border:1px solid var(--hairline)}
+
+.plugins{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:22px}
+.plugin{border:1px solid var(--hairline);padding:20px 20px 18px;background:rgba(20,22,26,.5);transition:border-color .25s}
+.plugin:hover{border-color:var(--ochre)}
+.plugin h3{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:1.02rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.03em}
+.plugin p{font-size:.88rem;color:var(--mute)}
+.plugin .stat{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);margin-top:14px;display:block;letter-spacing:.08em}
+.inhouse{margin-top:18px;font-size:.9rem;color:var(--mute)}
+
+.strip{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.strip span{font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.05em;border:1px solid var(--hairline);padding:6px 12px;color:var(--survey)}
+
+.tl{margin-top:22px;border-left:1px solid var(--hairline);padding-left:26px}
+.tl-item{position:relative;padding-bottom:24px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{content:"";position:absolute;left:-31px;top:7px;width:9px;height:9px;background:var(--ochre);transform:rotate(45deg);transition:background .3s}
+.tl-item.here::before{background:var(--gold)}
+.tl-item h3{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:1.08rem;margin:0 0 4px;text-transform:uppercase;letter-spacing:.02em}
+.tl-item p{font-size:.9rem;color:var(--mute)}
+
+footer{position:relative;z-index:1;background:var(--ironstone);border-top:1px solid var(--hairline);padding:70px 6vw;text-align:center}
+.contact-links{display:flex;gap:26px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+.contact-links a{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.06em}
+footer .coord{justify-content:center}
+footer h2{margin-bottom:0}
+
+@media(max-width:640px){.chapter{padding:10vh 5vw}.panel{padding:30px 24px}#world{padding-bottom:8vh}}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .panel{transition:none;opacity:1;transform:none}
+  .scroll-cue{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<main>
+
+<!-- HERO — Perth -->
+<section class="chapter center" id="hero" data-fly='{"center":[115.857,-31.953],"zoom":10.5,"pitch":45,"bearing":-15}'>
+  <div class="panel">
+    <div class="coord">31°57′S&nbsp;115°51′E · Perth, Western Australia</div>
+    <h1>Ian Hay</h1>
+    <div class="byline">GIS Specialist&nbsp;|&nbsp;Hex Coder</div>
+    <p class="sub">Extensive experience turning complex spatial data into decisions — across mining, energy and government, on projects spanning twenty one countries and six continents.</p>
+    <span class="hero-tag">QGIS · PostGIS · ESRI · FME · Power BI · Python · MapLibre</span>
+  </div>
+  <div class="scroll-cue">▾ SCROLL</div>
+</section>
+
+<!-- ABOUT -->
+<section class="chapter" data-fly='{"center":[115.83,-32.03],"zoom":12.5,"pitch":55,"bearing":30}'>
+  <div class="panel">
+    <div class="coord">Datum · About</div>
+    <h2>Maps that do work</h2>
+    <p>I started as a surveyor and cartographer, and that precision-first mindset still drives everything I build: spatial databases in PostgreSQL/PostGIS, automated FME pipelines, web GIS applications, and Power BI dashboards that turn drill holes, tenements and infrastructure into answers.</p>
+    <p>Equally at home in the open-source stack (QGIS, PyQGIS, Python) and the ESRI world — and outside the day job I publish QGIS plugins used by mappers around the globe.</p>
+    <div class="strip">
+      <span>PyQGIS / ArcPy</span><span>PostgreSQL/PostGIS</span><span>FME Flow</span>
+      <span>Power BI</span><span>MapLibre GL JS</span><span>SQL Server</span><span>ML/CV</span>
+    </div>
+  </div>
+</section>
+
+<!-- WORLD — map only -->
+<section class="chapter tall" id="world" data-fly='{"center":[60,5],"zoom":1.5,"pitch":0,"bearing":0}'>
+  <div class="panel bare">
+    <div class="coord">Global footprint · 3 bases · 21 countries · 6 continents</div>
+  </div>
+</section>
+
+<!-- CAREER -->
+<section class="chapter" id="career" data-fly='{"center":[119.5,-24.5],"zoom":5,"pitch":0,"bearing":0}'>
+  <div class="panel wide">
+    <div class="coord">Survey log · Career</div>
+    <h2>Spatial · Coding · Imagery</h2>
+    <div class="tl">
+      <div class="tl-item" data-fly='{"center":[119.3,-20.9],"zoom":8,"pitch":40,"bearing":-20}'>
+        <h3>Mining exploration GIS</h3>
+        <p>Full-stack spatial support for gold exploration: PostGIS infrastructure, automated FME workflows, mobile field data capture, live dashboards and CRS governance across the tenement portfolio.</p>
+      </div>
+      <div class="tl-item" data-fly='{"center":[116.2,-19.6],"zoom":7,"pitch":30,"bearing":10}'>
+        <h3>Energy &amp; environment</h3>
+        <p>Managing the full lifecycle of engineering, geological and environmental datasets for onshore and offshore oil &amp; gas — spatial analysis of environmental impacts informing strategic decisions.</p>
+      </div>
+      <div class="tl-item" data-fly='{"center":[134,-26],"zoom":3.6,"pitch":0,"bearing":0}'>
+        <h3>Geoscience data &amp; machine learning</h3>
+        <p>SQL database administration and Python tooling for global geoscience projects; ML and anomaly-detection code for national research programs; data-supply contract management.</p>
+      </div>
+      <div class="tl-item" data-fly='{"center":[103.82,1.35],"zoom":6,"pitch":30,"bearing":-30}'>
+        <h3>Marine seismic operations</h3>
+        <p>Led GIS and operations teams from Perth, Singapore and London delivering survey data across Asia-Pacific, the Middle East, Europe, Africa, the Americas and Antarctica — QA/QC, HSE and client delivery.</p>
+      </div>
+      <div class="tl-item" data-fly='{"center":[115.86,-32.0],"zoom":10,"pitch":45,"bearing":25}'>
+        <h3>Foundations</h3>
+        <p>B.App.Sc (Surveying &amp; Mapping), Curtin University. Surveyor, cartographer, drafting officer and photographer — roles where precision became a habit.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLUGINS -->
+<section class="chapter right" data-fly='{"center":[121.47,-30.75],"zoom":11,"pitch":40,"bearing":-40}'>
+  <div class="panel wide">
+    <div class="coord">Open source · github.com/ianhay</div>
+    <h2>QGIS plugins</h2>
+    <p>Published open source and used by mappers worldwide.</p>
+    <div class="plugins">
+      <div class="plugin">
+        <h3>QStory</h3>
+        <p>Export scrollytelling HTML map reports from QGIS using MapLibre GL JS — bookmarks as cameras, themes as layer states. This site is built in its spirit.</p>
+        <span class="stat">v1.4.0 · WYSIWYG preview</span>
+      </div>
+      <div class="plugin">
+        <h3>Georeferencer Extended Crosshairs</h3>
+        <p>Precision crosshair enhancements for the QGIS Georeferencer.</p>
+        <span class="stat">~top 5% by download velocity</span>
+      </div>
+      <div class="plugin">
+        <h3>Spatial Bookmark Extents</h3>
+        <p>Visualise and export spatial bookmark extents to GeoPackage, Shapefile, GeoJSON or KML.</p>
+        <span class="stat">GPL-3.0</span>
+      </div>
+      <div class="plugin">
+        <h3>Flash Features</h3>
+        <p>Flash features under the cursor or in the current selection for instant visual QA.</p>
+        <span class="stat">hover-driven highlighting</span>
+      </div>
+    </div>
+    <p class="inhouse">Plus a growing set of in-house and unpublished tools — AI-assisted PyQGIS panels, annotation and labelling utilities, and workflow automations built for specific teams.</p>
+  </div>
+</section>
+
+<!-- SIDE PROJECTS -->
+<section class="chapter right" data-fly='{"center":[115.834,-32.028],"zoom":14,"pitch":60,"bearing":140}'>
+  <div class="panel">
+    <div class="coord">Off-grid · Side projects</div>
+    <h2>Beyond QGIS</h2>
+    <p><strong>Power BI MapLibre visual</strong> — a production GIS viewer inside Power BI: multi-layer, cross-filtering, clustering, heatmaps, WMS/XYZ basemaps.</p>
+    <p><strong>PathwayIQ</strong> — mmWave radar + ESP32-S3 + LoRaWAN shared-path safety system. Provisional patent filed.</p>
+    <p><strong>Dip/strike symbol detection</strong> — YOLO OBB model trained on hand-annotated geological map arrows, with a custom QGIS annotation plugin.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="coord">End of traverse</div>
+  <h2>Need a plugin? Let's talk</h2>
+  <div class="contact-links">
+    <a href="https://github.com/ianhay">GitHub</a>
+    <a href="https://plugins.qgis.org/plugins/user/ianhay/">QGIS Plugins</a>
+    <a href="mailto:mrianhay@outlook.com">Email</a>
+  </div>
+</footer>
+
+<script>
+const map = new maplibregl.Map({
+  container:'map',
+  style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  center:[115.857,-31.953],
+  zoom:10.5, pitch:45, bearing:-15,
+  interactive:false,
+  attributionControl:{compact:true}
+});
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---- footprint data: bases + 21 project countries + Antarctica ---- */
+const bases = [[115.857,-31.953],[103.82,1.35],[-0.12,51.5]];
+const countries = [
+  [134,-25],[172.5,-41.5],[125.7,-8.8],[113.9,-0.8],[101.9,4.2],[114.7,4.5],
+  [100.9,15.8],[138.2,36.2],[122.5,12.8],[78.9,20.5],[45,23.8],[30.8,26.8],
+  [12.5,42.8],[5.3,52.2],[10.4,51.1],[-1.5,52.5],[8.4,60.5],[17.8,-11.2],[23.6,-2.9],
+  [165.6,-21.3],  /* New Caledonia */
+  [-64,-34.5],    /* Argentina */
+  [60,-72]        /* Antarctica */
+];
+
+let footprintReady=false, footprintShown=false;
+map.on('load',()=>{
+  map.addSource('footprint',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({id:'footprint-glow',type:'circle',source:'footprint',paint:{
+    'circle-radius':['*',['case',['==',['get','k'],'b'],14,8],['get','s']],
+    'circle-color':'#d9a441','circle-opacity':0.18,'circle-blur':0.6
+  }});
+  map.addLayer({id:'footprint-dot',type:'circle',source:'footprint',paint:{
+    'circle-radius':['*',['case',['==',['get','k'],'b'],5,2.5],['get','s']],
+    'circle-color':['case',['==',['get','k'],'b'],'#d9a441','#c8502a'],
+    'circle-stroke-width':1,'circle-stroke-color':'#e8e2d4','circle-stroke-opacity':0.5
+  }});
+  footprintReady=true;
+  if(footprintShown) showFootprint(); /* chapter reached before map loaded */
+});
+
+/* pulse dots in one by one */
+function showFootprint(){
+  if(!footprintReady){footprintShown=true;return}
+  if(footprintShown && map.getSource('footprint')._data.features.length) return;
+  footprintShown=true;
+  const all=[
+    ...countries.map(c=>({type:'Feature',properties:{k:'c',s:1},geometry:{type:'Point',coordinates:c}})),
+    ...bases.map(c=>({type:'Feature',properties:{k:'b',s:1},geometry:{type:'Point',coordinates:c}}))
+  ];
+  if(reduced){
+    map.getSource('footprint').setData({type:'FeatureCollection',features:all});
+    return;
+  }
+  const shown=[];
+  all.forEach((f,i)=>{
+    setTimeout(()=>{
+      shown.push(f);
+      map.getSource('footprint').setData({type:'FeatureCollection',features:shown});
+      /* pulse: scale factor eases 2.2 -> 1 */
+      const t0=performance.now();
+      const pulse=now=>{
+        const p=Math.min((now-t0)/450,1);
+        f.properties.s=2.2-1.2*(1-Math.pow(1-p,3))*1; /* ease-out cubic 2.2->1 */
+        map.getSource('footprint').setData({type:'FeatureCollection',features:shown});
+        if(p<1) requestAnimationFrame(pulse);
+      };
+      requestAnimationFrame(pulse);
+    }, i*110);
+  });
+}
+
+/* ---- chapter observer ---- */
+const io = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('active');
+      if(e.target.id==='world') showFootprint();
+      /* career chapter camera handled per timeline item */
+      if(e.target.id!=='career'){
+        const fly = JSON.parse(e.target.dataset.fly||'null');
+        if(fly){ reduced ? map.jumpTo(fly) : map.flyTo({...fly,duration:2600,essential:true}); }
+      }
+    } else e.target.classList.remove('active');
+  });
+},{threshold:0.45});
+document.querySelectorAll('.chapter').forEach(c=>io.observe(c));
+
+/* ---- per-timeline-item fly-tos in the career chapter ---- */
+const tlIO = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      document.querySelectorAll('.tl-item').forEach(t=>t.classList.remove('here'));
+      e.target.classList.add('here');
+      const fly = JSON.parse(e.target.dataset.fly||'null');
+      if(fly){ reduced ? map.jumpTo(fly) : map.flyTo({...fly,duration:2200,essential:true}); }
+    }
+  });
+},{threshold:0.9,rootMargin:'-25% 0px -25% 0px'});
+document.querySelectorAll('.tl-item').forEach(t=>tlIO.observe(t));
+</script>
+
+</body>
+</html>
