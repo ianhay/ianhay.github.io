@@ -61,7 +61,7 @@ strong{font-weight:600;color:var(--survey)}
 a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(217,164,65,.35)}
 a:hover{border-bottom-color:var(--gold)}
 
-#hero .panel{background:transparent;border:none;backdrop-filter:none;max-width:800px}
+#hero .panel{max-width:800px}
 .byline{
   font-family:'Space Grotesk',sans-serif;font-weight:500;text-transform:uppercase;
   letter-spacing:.28em;font-size:clamp(.8rem,1.6vw,1.05rem);color:var(--ochre);margin-top:14px;
@@ -121,7 +121,7 @@ footer h2{margin-bottom:0}
 <main>
 
 <!-- HERO — Perth -->
-<section class="chapter center" id="hero" data-fly='{"center":[115.857,-31.953],"zoom":10.5,"pitch":45,"bearing":-15}'>
+<section class="chapter center" id="hero" data-fly='{"center":[116.12,-31.9],"zoom":10.2,"pitch":45,"bearing":-15}'>
   <div class="panel">
     <div class="coord">31°57′S&nbsp;115°51′E · Perth, Western Australia</div>
     <h1>Ian Hay</h1>
@@ -137,7 +137,7 @@ footer h2{margin-bottom:0}
   <div class="panel">
     <div class="coord">Datum · About</div>
     <h2>Maps that do work</h2>
-    <p>I started as a surveyor and cartographer, and that precision-first mindset still drives everything I build: spatial databases in PostgreSQL/PostGIS, automated FME pipelines, web GIS applications, and Power BI dashboards that turn drill holes, tenements and infrastructure into answers.</p>
+    <p>I started as a surveyor and cartographer, and that precision-first mindset still drives everything I build: spatial databases in PostgreSQL/PostGIS, automated FME pipelines, web GIS applications, and Power BI dashboards that turn raw spatial data into answers.</p>
     <p>Equally at home in the open-source stack (QGIS, PyQGIS, Python) and the ESRI world — and outside the day job I publish QGIS plugins used by mappers around the globe.</p>
     <div class="strip">
       <span>PyQGIS / ArcPy</span><span>PostgreSQL/PostGIS</span><span>FME Flow</span>
@@ -191,14 +191,14 @@ footer h2{margin-bottom:0}
     <p>Published open source and used by mappers worldwide.</p>
     <div class="plugins">
       <div class="plugin">
-        <h3>QStory</h3>
-        <p>Export scrollytelling HTML map reports from QGIS using MapLibre GL JS — bookmarks as cameras, themes as layer states. This site is built in its spirit.</p>
-        <span class="stat">v1.4.0 · WYSIWYG preview</span>
-      </div>
-      <div class="plugin">
         <h3>Georeferencer Extended Crosshairs</h3>
         <p>Precision crosshair enhancements for the QGIS Georeferencer.</p>
         <span class="stat">~top 5% by download velocity</span>
+      </div>
+      <div class="plugin">
+        <h3>Floating Info Tool</h3>
+        <p>Feature attributes in a floating panel beside the cursor — inspect data without opening the identify results dock.</p>
+        <span class="stat">instant attribute inspection</span>
       </div>
       <div class="plugin">
         <h3>Spatial Bookmark Extents</h3>
@@ -206,9 +206,9 @@ footer h2{margin-bottom:0}
         <span class="stat">GPL-3.0</span>
       </div>
       <div class="plugin">
-        <h3>Flash Features</h3>
-        <p>Flash features under the cursor or in the current selection for instant visual QA.</p>
-        <span class="stat">hover-driven highlighting</span>
+        <h3>Window Finder</h3>
+        <p>Locate and recover QGIS dialogs and panels stranded off-screen or lost across multi-monitor setups.</p>
+        <span class="stat">one-click window rescue</span>
       </div>
     </div>
     <p class="inhouse">Plus a growing set of in-house and unpublished tools — AI-assisted PyQGIS panels, annotation and labelling utilities, and workflow automations built for specific teams.</p>
@@ -242,8 +242,8 @@ footer h2{margin-bottom:0}
 const map = new maplibregl.Map({
   container:'map',
   style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  center:[115.857,-31.953],
-  zoom:10.5, pitch:45, bearing:-15,
+  center:[116.12,-31.9],
+  zoom:10.2, pitch:45, bearing:-15,
   interactive:false,
   attributionControl:{compact:true}
 });
@@ -313,9 +313,16 @@ const io = new IntersectionObserver(entries=>{
   entries.forEach(e=>{
     if(e.isIntersecting){
       e.target.classList.add('active');
-      if(e.target.id==='world') showFootprint();
+      if(e.target.id==='world'){
+        showFootprint();
+        /* fit ALL footprint dots (incl. Antarctica) on any screen shape */
+        const b=new maplibregl.LngLatBounds();
+        [...bases,...countries].forEach(c=>b.extend(c));
+        map.fitBounds(b,{padding:{top:60,bottom:110,left:30,right:30},
+                         duration:reduced?0:2600,pitch:0,bearing:0,essential:true});
+      }
       /* career chapter camera handled per timeline item */
-      if(e.target.id!=='career'){
+      else if(e.target.id!=='career'){
         const fly = JSON.parse(e.target.dataset.fly||'null');
         if(fly){ reduced ? map.jumpTo(fly) : map.flyTo({...fly,duration:2600,essential:true}); }
       }
